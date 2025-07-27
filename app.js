@@ -14,6 +14,4 @@ app.get('/', async (req, res) => {
   return res.status(200).json({ message: "Server is running" });
 });
 
-app.listen(process.env.PORT, (e) => {
-  e ? console.log(e) : console.log(`Server is running on port :- ${process.env.PORT}`);
-});
+module.exports = app;
