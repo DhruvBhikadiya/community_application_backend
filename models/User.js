@@ -18,10 +18,15 @@ const userSchema = new mongoose.Schema({
     trim: true,
     minlength: 2,
   },
+  mobilePrefix: {
+    type: String,
+    required: [true, "Mobile prefix is required"],
+    match: [/^\+\d{1,4}$/, "Invalid mobile prefix format (e.g., +91)"],
+  },
   mobileNumber: {
     type: String,
     required: [true, "Mobile number is required"],
-    match: [/^\+\d{1,4}\d{10}$/, "Invalid formatted mobile number"],
+    match: [/^\d{10}$/, "Mobile number must be 10 digits"],
     unique: true,
   },
   village: {
@@ -54,6 +59,10 @@ const userSchema = new mongoose.Schema({
     enum: ["Pending", "Approved", "Reject"],
     default: "Pending",
   },
+  isFamilyHead: {
+    type: Boolean,
+    default: false,
+  },
   email: {
     type: String,
     required: [true, "Email is required"],
@@ -71,34 +80,59 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  nriType: {
+    type: String,
+    enum: ["employee", "student", "both"],
+    required: function () {
+      return this.isNri;
+    },
+  },
+  university: {
+    type: String,
+    required: function () {
+      return this.isNri &&
+        (this.nriType === "student" || this.nriType === "both") &&
+        this.role?.includes("User");
+    },
+  },
   workSector: {
     type: String,
     required: function () {
-      return this.isNri;
+      return this.isNri &&
+        (this.nriType === "employee" || this.nriType === "both") &&
+        this.role?.includes("User");
     },
   },
   designation: {
     type: String,
     required: function () {
-      return this.isNri;
+      return this.isNri &&
+        (this.nriType === "employee" || this.nriType === "both") &&
+        this.role?.includes("User");
     },
   },
   career: {
     type: String,
     required: function () {
-      return this.isNri;
-    },
-  },
-  pr: {
-    type: Boolean,
-    required: function () {
-      return this.isNri;
+      return this.isNri &&
+        (this.nriType === "employee" || this.nriType === "both") &&
+        this.role?.includes("User");
     },
   },
   workExperience: {
     type: String,
     required: function () {
-      return this.isNri;
+      return this.isNri &&
+        (this.nriType === "employee" || this.nriType === "both") &&
+        this.role?.includes("User");
+    },
+  },
+  pr: {
+    type: Boolean,
+    required: function () {
+      return this.isNri &&
+        (this.nriType === "employee" || this.nriType === "both") &&
+        this.role?.includes("User");
     },
   },
   city: {
