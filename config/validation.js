@@ -34,12 +34,20 @@ const userValidationSchema = Joi.object({
             "string.pattern.base": "Last name must contain only alphabets",
         }),
 
+    mobilePrefix: Joi.string()
+        .pattern(/^\+\d{1,4}$/)
+        .required()
+        .messages({
+            "any.required": "Mobile prefix is required",
+            "string.pattern.base": "Mobile prefix must be in format +<country_code> (e.g., +91, +1)",
+        }),
+
     mobileNumber: Joi.string()
-        .pattern(/^\d{10}$/)
+        .pattern(/^\d{6,15}$/)
         .required()
         .messages({
             "any.required": "Mobile number is required",
-            "string.pattern.base": "Mobile number must be 10 digits",
+            "string.pattern.base": "Mobile number must be between 6 to 15 digits",
         }),
 
     email: Joi.string().email().required().messages({
@@ -80,7 +88,6 @@ const userValidationSchema = Joi.object({
         .items(Joi.string().valid("superAdmin", "Admin", "Pratinidhi", "User"))
         .default(["User"])
         .min(1)
-        .required()
         .messages({
             "array.min": "At least one role is required",
             "any.required": "Role is required",
@@ -90,46 +97,84 @@ const userValidationSchema = Joi.object({
         .valid("Pending", "Approved", "Reject")
         .default("Pending"),
 
-    isNri: Joi.boolean().default(false),
+    isNri: Joi.boolean().default(false).required(),
 
-    workSector: Joi.when("isNri", {
+    nriType: Joi.when("isNri", {
         is: true,
-        then: Joi.string().required().messages({
-            "any.required": "Work sector is required for NRI",
-        }),
+        then: Joi.string()
+            .valid("employee", "student", "both")
+            .required()
+            .messages({
+                "any.required": "NRI type is required",
+                "any.only": "Invalid NRI type",
+            }),
         otherwise: Joi.string().optional(),
     }),
 
-    designation: Joi.when("isNri", {
-        is: true,
-        then: Joi.string().required().messages({
-            "any.required": "Designation is required for NRI",
-        }),
-        otherwise: Joi.string().optional(),
+    university: Joi.any().custom((value, helpers) => {
+        const { role, isNri, nriType } = helpers.state.ancestors[0];
+        const isUser = Array.isArray(role) && role.includes("User");
+        if (isUser && isNri && (nriType === "student" || nriType === "both")) {
+            if (!value) return helpers.error("any.required");
+        }
+        return value;
+    }).messages({
+        "any.required": "University is required for NRI student",
     }),
 
-    career: Joi.when("isNri", {
-        is: true,
-        then: Joi.string().required().messages({
-            "any.required": "Career is required for NRI",
-        }),
-        otherwise: Joi.string().optional(),
+    workSector: Joi.any().custom((value, helpers) => {
+        const { role, isNri, nriType } = helpers.state.ancestors[0];
+        const isUser = Array.isArray(role) && role.includes("User");
+        if (isNri && isUser && (nriType === "employee" || nriType === "both")) {
+            if (!value) return helpers.error("any.required");
+        }
+        return value;
+    }).messages({
+        "any.required": "Work sector is required for NRI employee",
     }),
 
-    pr: Joi.when("isNri", {
-        is: true,
-        then: Joi.boolean().required().messages({
-            "any.required": "PR status is required for NRI",
-        }),
-        otherwise: Joi.boolean().optional(),
+    designation: Joi.any().custom((value, helpers) => {
+        const { role, isNri, nriType } = helpers.state.ancestors[0];
+        const isUser = Array.isArray(role) && role.includes("User");
+        if (isNri && isUser && (nriType === "employee" || nriType === "both")) {
+            if (!value) return helpers.error("any.required");
+        }
+        return value;
+    }).messages({
+        "any.required": "designation is required for NRI employee",
     }),
 
-    workExperience: Joi.when("isNri", {
-        is: true,
-        then: Joi.string().required().messages({
-            "any.required": "Work experience is required for NRI",
-        }),
-        otherwise: Joi.string().optional(),
+    career: Joi.any().custom((value, helpers) => {
+        const { role, isNri, nriType } = helpers.state.ancestors[0];
+        const isUser = Array.isArray(role) && role.includes("User");
+        if (isNri && isUser && (nriType === "employee" || nriType === "both")) {
+            if (!value) return helpers.error("any.required");
+        }
+        return value;
+    }).messages({
+        "any.required": "career is required for NRI employee",
+    }),
+
+    pr: Joi.any().custom((value, helpers) => {
+        const { role, isNri, nriType } = helpers.state.ancestors[0];
+        const isUser = Array.isArray(role) && role.includes("User");
+        if (isNri && isUser && (nriType === "employee" || nriType === "both")) {
+            if (value === undefined || value === null) return helpers.error("any.required");
+        }
+        return value;
+    }).messages({
+        "any.required": "pr is required for NRI employee",
+    }),
+
+    workExperience: Joi.any().custom((value, helpers) => {
+        const { role, isNri, nriType } = helpers.state.ancestors[0];
+        const isUser = Array.isArray(role) && role.includes("User");
+        if (isNri && isUser && (nriType === "employee" || nriType === "both")) {
+            if (!value) return helpers.error("any.required");
+        }
+        return value;
+    }).messages({
+        "any.required": "Work experience is required for NRI employee",
     }),
 
     city: Joi.when("isNri", {
