@@ -35,7 +35,7 @@ const registerUser = async (req, res) => {
     }
 
     if (password !== confirmPassword) {
-      return res.status(400).json({ msg: "Password and confirm password are not same, Please enter same password" });
+      return res.status(400).json({ msg: "Password and confirm password do not match. Please enter the same password." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
