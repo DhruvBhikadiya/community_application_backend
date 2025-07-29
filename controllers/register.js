@@ -10,45 +10,38 @@ const registerUser = async (req, res) => {
   }
 
   try {
-    const {
-      firstName, middleName, lastName, mobileNumber,
-      age, village, country, gender, role,
-      bloodGroup, email, password,
-      workSector, designation, career, city, pr, workExperience
+    let {
+      firstName, middleName, lastName, mobilePrefix, mobileNumber,
+      village, country, gender, role,
+      bloodGroup, email, password, isNri,
+      workSector, designation, career, city, pr, workExperience,
+      nriType, university
     } = req.body;
 
-    const countryCodes = {
-      India: '+91',
-      USA: '+1',
-      UK: '+44',
-      Canada: '+1',
-      Australia: '+61',
-      UAE: '+971',
-    };
-    const countryCode = countryCodes[country] || '+00';
-    const formattedMobile = `${countryCode}${mobileNumber}`;
+    if (!Array.isArray(role) || role.length === 0) {
+      role = ['User'];
+    } else if (!role.includes('User')) {
+      role.push('User');
+    }
 
-    // Check duplicate mobile
-    const existingUser = await User.findOne({ mobileNumber: formattedMobile });
+    const existingUser = await User.findOne({ mobileNumber: mobileNumber });
     if (existingUser) {
       return res.status(400).json({ msg: "User already registered with this mobile number" });
     }
 
-    // Check duplicate email
     const existingEmail = await User.findOne({ email: email.toLowerCase() });
     if (existingEmail) {
       return res.status(400).json({ msg: "User already registered with this email" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const isNri = country !== 'India';
 
     const newUser = new User({
       firstName,
       middleName,
       lastName,
-      mobileNumber: formattedMobile,
-      age,
+      mobilePrefix,
+      mobileNumber,
       village,
       country,
       gender,
@@ -58,6 +51,8 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
       isNri,
       ...(isNri && {
+        nriType,
+        ...(nriType === "student" || nriType === "both" ? { university } : {}),
         city,
         workSector,
         designation,
@@ -68,8 +63,9 @@ const registerUser = async (req, res) => {
       status: (Array.isArray(role) && (
         role.includes("superAdmin") ||
         role.includes("Admin") ||
-        role.includes("pratinidhi"))
+        role.includes("Pratinidhi"))
       ) ? "Approved" : "Pending",
+      isFamilyHead: false,
     });
 
     await newUser.save();
