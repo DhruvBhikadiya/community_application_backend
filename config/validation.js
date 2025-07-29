@@ -60,6 +60,11 @@ const userValidationSchema = Joi.object({
         "string.min": "Password must be at least 6 characters",
     }),
 
+    confirmPassword: Joi.string().min(6).required().messages({
+        "any.required": "Password is required",
+        "string.min": "Password must be at least 6 characters",
+    }),
+
     village: Joi.string().required().messages({
         "any.required": "Village is required",
     }),
