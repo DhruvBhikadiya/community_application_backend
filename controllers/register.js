@@ -13,7 +13,7 @@ const registerUser = async (req, res) => {
     let {
       firstName, middleName, lastName, mobilePrefix, mobileNumber,
       village, country, gender, role,
-      bloodGroup, email, password, isNri,
+      bloodGroup, email, password, confirmPassword, isNri,
       workSector, designation, career, city, pr, workExperience,
       nriType, university
     } = req.body;
@@ -32,6 +32,10 @@ const registerUser = async (req, res) => {
     const existingEmail = await User.findOne({ email: email.toLowerCase() });
     if (existingEmail) {
       return res.status(400).json({ msg: "User already registered with this email" });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ msg: "Password and confirm password are not same, Please enter same password" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
